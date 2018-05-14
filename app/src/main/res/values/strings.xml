@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">UHFReader</string>
+
+    <string name="ble">连接蓝牙</string>
+    <string name="uhfdemo">UHF读写测试</string>
+    <string name="setting">读写器设置</string>
+</resources>

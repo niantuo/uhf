@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="ble_name" type="id"/>
+    <item name="ble_address" type="id"/>
+
+    <item name="uhf_epc" type="id"/>
+
+    <item name="uhf_tid" type="id"/>
+
+    <item name="uhf_user" type="id"/>
+    <item name="uhf_pwd" type="id"/>
+
+</resources>
