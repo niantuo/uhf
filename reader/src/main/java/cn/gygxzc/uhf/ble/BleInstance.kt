@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothSocket
 import cn.gygxzc.uhf.LogUtils
 import cn.gygxzc.uhf.event.ErrorCode
 import cn.gygxzc.uhf.exception.RFIDException
-import cn.gygxzc.uhf.uhf.UHFException
 import cn.gygxzc.uhf.uhf.enums.UHFExEnums
 import cn.gygxzc.uhf.uhf.reader.SocketReader
 import cn.gygxzc.uhf.uhf.reader.UHFReader
@@ -77,7 +76,7 @@ class BleInstance {
     fun write(bytes: ByteArray): Observable<ByteArray> {
         return Observable.create<ByteArray> {
             ensureSocket()
-            LogUtils.info(TAG,"写->${Tools.bytes2HexString(bytes)}")
+            LogUtils.info(TAG, "写->${Tools.bytes2HexString(bytes)}")
             synchronized(bluetoothSocket!!) {
                 bluetoothSocket!!.outputStream.write(bytes)
                 bluetoothSocket!!.outputStream.flush()
@@ -86,7 +85,7 @@ class BleInstance {
             it.onComplete()
         }
                 .flatMap<ByteArray> { UHFReader.read(bluetoothSocket!!.inputStream) }
-                .doOnDispose { LogUtils.debug(TAG,"write -> 取消订阅") }
+                .doOnDispose { LogUtils.debug(TAG, "write -> 取消订阅") }
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
     }
@@ -97,7 +96,7 @@ class BleInstance {
     fun writeSingle(bytes: ByteArray): Single<ByteArray> {
         return Single.create<ByteArray> {
             ensureSocket()
-            LogUtils.debug(TAG,"写single->${Tools.bytes2HexString(bytes)}")
+            LogUtils.debug(TAG, "写single->${Tools.bytes2HexString(bytes)}")
             synchronized(bluetoothSocket!!) {
                 bluetoothSocket!!.outputStream.write(bytes)
                 bluetoothSocket!!.outputStream.flush()
@@ -108,7 +107,7 @@ class BleInstance {
     }
 
 
-    fun writeDirect(bytes: ByteArray):Single<ByteArray>{
+    fun writeDirect(bytes: ByteArray): Single<ByteArray> {
         return Single.create<ByteArray> {
             ensureSocket()
             synchronized(bluetoothSocket!!) {
@@ -117,9 +116,9 @@ class BleInstance {
             }
             Thread.sleep(50)
             val response = SocketReader.read(bluetoothSocket!!.inputStream)
-            if (response==null){
-                it.onError(UHFException(UHFExEnums.ERR_NO_RESPONSE))
-            }else{
+            if (response == null) {
+                it.onError(RFIDException(UHFExEnums.ERR_NO_RESPONSE))
+            } else {
                 it.onSuccess(response)
             }
         }

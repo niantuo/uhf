@@ -23,14 +23,6 @@ enum class ErrorCode(val code: Int, val desc: String) {
     ERROR_BLE_NO_CONNECTED(22, "蓝牙未连接"),
     ERROR_BLE_DISABLE(23,"蓝牙不可用"),
 
-
-    ERROR_UHF_RESP_HEAD_INCORRECT(30, "数据头不正确"),
-    ERROR_UHF_RESP_END_INCORRECT(31, "数据尾不正确"),
-    ERROR_UHF_RESP_CRC_FAILED(32, "数据校验失败"),
-
-
-    ERR_UN_SUPPORT_SENSITIVE_VALUE(40,"不支持的灵敏度值")
-
     ;
 
 }

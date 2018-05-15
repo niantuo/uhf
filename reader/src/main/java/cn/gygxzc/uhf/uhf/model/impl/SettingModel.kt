@@ -2,10 +2,8 @@ package cn.gygxzc.uhf.uhf.model.impl
 
 import cn.gygxzc.uhf.LogUtils
 import cn.gygxzc.uhf.ble.BleInstance
-import cn.gygxzc.uhf.event.ErrorCode
 import cn.gygxzc.uhf.exception.RFIDException
 import cn.gygxzc.uhf.kotlin.otherObservable
-import cn.gygxzc.uhf.uhf.UHFException
 import cn.gygxzc.uhf.uhf.cmd.Factory
 import cn.gygxzc.uhf.uhf.enums.SENSITIVE
 import cn.gygxzc.uhf.uhf.enums.UHFExEnums
@@ -68,7 +66,7 @@ class SettingModel : ISettingModel {
         return Single.create<SENSITIVE> {
             val sensitive = SENSITIVE.values().firstOrNull { it.code == value }
             if (sensitive == null) {
-                it.onError(RFIDException(ErrorCode.ERR_UN_SUPPORT_SENSITIVE_VALUE))
+                it.onError(RFIDException(UHFExEnums.ERR_UN_SUPPORT_SENSITIVE_VALUE))
             } else {
                 it.onSuccess(sensitive)
             }
@@ -202,10 +200,10 @@ class SettingModel : ISettingModel {
                                     val power = byteArrayOf(response[1], response[2])
                                     it.onNext(Tools.bytes2HexString(power).toInt(16))
                                     it.onComplete()
-                                }catch (e:Exception){
+                                } catch (e: Exception) {
                                     e.printStackTrace()
-                                }finally {
-                                    LogUtils.info(TAG,"费解->${Tools.bytes2HexString(response)}")
+                                } finally {
+                                    LogUtils.info(TAG, "费解->${Tools.bytes2HexString(response)}")
                                 }
                             } else {
                                 LogUtils.info(TAG, "getOutputPower->${Tools.bytes2HexString(response)}")
@@ -223,7 +221,7 @@ class SettingModel : ISettingModel {
     }
 
     override fun setFrequency(startFrequency: Int, freqSpace: Int, freqQuality: Int): Single<ByteArray> {
-        return Single.error(UHFException(UHFExEnums.ERR_NONE))
+        return Single.error(RFIDException(UHFExEnums.ERR_NONE))
     }
 
 }

@@ -85,17 +85,3 @@ fun Observable<ByteArray>.toTakeMemData(epc: String): Observable<TagInfo> {
         }
     }
 }
-
-/**
- * 不改变错误抛出
- * 但是会将code 返回成封装的错误类型
- * 注意的是，这个只能处理特定类型的错误
- * @see cn.gygxzc.uhf.uhf.UHFException
- */
-fun Observable<ByteArray>.errorHandler(): Observable<ByteArray> {
-
-
-    return retryWhen { errors -> errors.flatMap<ByteArray> { Observable.error(it) } }
-
-
-}

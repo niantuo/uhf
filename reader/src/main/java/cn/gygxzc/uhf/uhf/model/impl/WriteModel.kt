@@ -2,8 +2,7 @@ package cn.gygxzc.uhf.uhf.model.impl
 
 import cn.gygxzc.uhf.LogUtils
 import cn.gygxzc.uhf.ble.BleInstance
-import cn.gygxzc.uhf.kotlin.otherObservable
-import cn.gygxzc.uhf.uhf.UHFException
+import cn.gygxzc.uhf.exception.RFIDException
 import cn.gygxzc.uhf.uhf.cmd.Factory
 import cn.gygxzc.uhf.uhf.enums.MemBank
 import cn.gygxzc.uhf.uhf.enums.UHFExEnums
@@ -11,9 +10,9 @@ import cn.gygxzc.uhf.uhf.model.ISelectModel
 import cn.gygxzc.uhf.uhf.model.IWriteModel
 import cn.gygxzc.uhf.uhf.reader.UHFReader
 import cn.gygxzc.uhf.uhf.util.Tools
-import io.reactivex.*
+import io.reactivex.Single
+import io.reactivex.SingleSource
 import io.reactivex.schedulers.Schedulers
-import java.util.concurrent.TimeUnit
 
 /**
  * @author niantuo
@@ -61,18 +60,18 @@ class WriteModel : IWriteModel {
                     SingleSource<Boolean> {
                         val response = UHFReader.checkResponse(resp)
                         if (response == null) {
-                            it.onError(UHFException(UHFExEnums.ERR_RESPONSE_DATA))
+                            it.onError(RFIDException(UHFExEnums.ERR_RESPONSE_DATA))
                         } else if (response[0] == 0x49.toByte()) {
                             val param = response[response.size - 1]
                             if (param == factory.RESPONSE_OK) {
                                 it.onSuccess(true)
                             } else {
                                 LogUtils.debug(TAG, "write err ->${Tools.bytesToInt(byteArrayOf(param))}")
-                                it.onError(UHFException(UHFExEnums.ERR_WRITE_FAILED))
+                                it.onError(RFIDException(UHFExEnums.ERR_WRITE_FAILED))
                             }
                         } else {
                             LogUtils.debug(TAG, "response ->${Tools.bytes2HexString(response)}")
-                            it.onError(UHFException(UHFExEnums.ERR_WRITE_FAILED))
+                            it.onError(RFIDException(UHFExEnums.ERR_WRITE_FAILED))
                         }
                     }
                 }
