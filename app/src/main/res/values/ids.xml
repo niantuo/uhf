@@ -9,5 +9,11 @@
 
     <item name="uhf_user" type="id"/>
     <item name="uhf_pwd" type="id"/>
+    <item name="uhf_multi_epc" type="id"/>
+    <item name="tag_select" type="id"/>
+
+    <item name="version_name" type="id"/>
+    <item name="out_power" type="id"/>
+    <item name="sensitive_btn" type="id"/>
 
 </resources>

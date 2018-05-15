@@ -1,6 +1,7 @@
 package cn.gygxzc.uhf.uhf.reader
 
 import android.util.Log
+import cn.gygxzc.uhf.LogUtils
 import cn.gygxzc.uhf.uhf.entity.TagInfo
 import cn.gygxzc.uhf.uhf.util.RespUtils
 import cn.gygxzc.uhf.uhf.util.Tools
@@ -10,7 +11,6 @@ import io.reactivex.Single
 import io.reactivex.SingleEmitter
 import java.io.InputStream
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.experimental.and
 
 object UHFReader {
@@ -27,21 +27,26 @@ object UHFReader {
      * 有命令，则有返回，或者说是发送命令之后，在500ms内如果没有返回，
      * 则表示该次请求失败,只会发送一次数据
      * 有些实际上，只需要一次数据返回即可，所以这个地方，需要做一些工作
-     * 实际上这个也是有超时计算的
+     * 实际上这个也是有超时计算的，
+     * 所以实际上应该是这个
      */
     fun read(inputStream: InputStream): Observable<ByteArray> {
         return Observable.create<ByteArray> {
+            val start = System.currentTimeMillis()
+            LogUtils.debug(TAG, "start receive response->${System.currentTimeMillis()}")
             synchronized(inputStream) {
                 innerRead(inputStream, it, null)
             }
+            LogUtils.debug(TAG, "deal response end->${System.currentTimeMillis() - start}")
             it.onComplete()
         }
-                .timeout(800, TimeUnit.MILLISECONDS)
     }
 
 
     /**
      * 只发送一次成功的数据，200ms超时报错
+     * 这个地方是不应该是Single，因为可能发出多个事件，
+     * 最后哪一个事件想下传递，这个是由后面的决定的
      */
     fun readSingle(inputStream: InputStream): Single<ByteArray> {
         return Single.create<ByteArray> {
@@ -82,7 +87,6 @@ object UHFReader {
                 Arrays.fill(bytes, BYTE_ZERO)
             }
             System.arraycopy(buffer, 0, bytes, index, size)
-            Log.i(TAG, "buffer->${Tools.bytes2HexString(bytes)}")
             index += size
             if (count <= MIN_RES_BYTE) {
                 continue
@@ -97,7 +101,7 @@ object UHFReader {
                 }
                 val res = ByteArray(len + 7)
                 System.arraycopy(bytes, 0, res, 0, len + 7)
-                Log.i(TAG, "whole ${eventCount++}  buffer->${Tools.bytes2HexString(res)}")
+                Log.i(TAG, "correct  response ${eventCount++}  buffer->${Tools.bytes2HexString(res)}")
                 emitter?.onNext(res)
                 singleEmitter?.onSuccess(res)
             }
@@ -107,7 +111,9 @@ object UHFReader {
 
     /**
      * 这个地方不应该跑出异常，数据应该直接舍弃
-     * 最后由上游抛出超时或者等待下一个数据
+     * 最后由上游抛出超时或者等待下一个数据,
+     * 实际上这个返回的值 指令+数据
+     * AA 01 28 00 01 00 2A 8E
      */
     fun checkResponse(bytes: ByteArray): ByteArray? {
         val len = bytes.size

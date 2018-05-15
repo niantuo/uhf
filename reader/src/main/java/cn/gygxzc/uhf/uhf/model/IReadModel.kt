@@ -29,7 +29,7 @@ interface IReadModel {
     /**
      * 停止多标签存盘
      */
-    fun stopInventoryMulti(): Observable<ByteArray>
+    fun stopInventoryMulti(): Single<Boolean>
 
     /**
      * 读数据
@@ -39,19 +39,19 @@ interface IReadModel {
      * byte[] accessPassword 访问密码
      * 返回的byte[] 为  EPC + 读取的数据
      */
-    fun readFrom6C(epc: String, memBank: Int, startAddr: Int, length: Int, accessPassword: ByteArray): Single<String>
+    fun readFrom6C(epc: String, memBank: Int, startAddr: Int, length: Int, accessPassword: ByteArray): Single<TagInfo>
 
 
     /**
      * 读取标签的唯一标号TID
      */
-    fun readTID(epc: String, password: String): Single<String>
+    fun readTID(epc: String, password: String): Single<TagInfo>
 
     /**
      * 读取用户区数据
      * 暂时只读取前几位，不会
      */
-    fun readUser(epc: String, password: String): Single<String>
+    fun readUser(epc: String, password: String): Single<TagInfo>
 
     companion object {
         fun create(): IReadModel = ReadModel()

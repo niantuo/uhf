@@ -21,12 +21,3 @@ class ObservableFlatObserver<T>(val observable: Observable<T>) : FlatObserver<T>
 fun <T> Observable<T>.flatEvent(): FlatObserver<T> {
     return ObservableFlatObserver(this)
 }
-
-
-/**
- * 中途插进来另一个Observable，两者有关系
- * 我是想
- */
-fun <T, O> Observable<T>.otherObservable(call: (T, Observer<in O>) -> Unit): Observable<O> {
-    return flatMap<O> { data -> ObservableSource { call.invoke(data, it) } }
-}

@@ -24,14 +24,14 @@ interface IWriteModel {
      * 返回 boolean，true写入数据正确，false写入数据失败
      */
     fun writeTo6C(password: ByteArray, memBank: Int, startAddr: Int,
-                  dataLen: Int, originData: ByteArray, origin: String): Single<ByteArray>
+                  dataLen: Int, originData: ByteArray, origin: String): Single<Boolean>
 
     /**
      * @param epc 要写入的新的PEC数据
      * @param origin  原有的EPC数据
      * 写数据需要先锁定，在写入，因此需要原有的EPC数据
      */
-    fun writeEPC(password: String, epc: String, origin: String): Single<ByteArray>
+    fun writeEPC(password: String, epc: String, origin: String): Single<Boolean>
 
     /**
      * 实际上这种操作，返回值无法就是成功或者失败，
@@ -39,7 +39,8 @@ interface IWriteModel {
      * 写用户数据不支持部分写，如果位数不够，将在前面补0
      * 如果超出，将不会提醒，将会省略掉最后的数据
      */
-    fun writeToUser(password: String, data: String, origin: String): Single<ByteArray>
+    fun writeToUser(password: String, startAddr: Int = 0, dataLen: Int = 24,
+                    data: String, origin: String): Single<Boolean>
 
 
     companion object {

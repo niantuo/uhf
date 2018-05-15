@@ -15,11 +15,11 @@ interface ISelectModel {
     /**
      * 这个选择就应该是Single，没有返回很多值的说法
      */
-    fun select(epc: String): Single<ByteArray>
+    fun select(epc: String): Single<Boolean>
 
     fun selectCMD(epc: String): ByteArray
 
-    fun unSelect(): Single<ByteArray>
+    fun unSelect(): Single<Boolean>
 
 
     companion object {

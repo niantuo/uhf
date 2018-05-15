@@ -2,9 +2,14 @@ package cn.gygxzc.uhf.ble
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
+import cn.gygxzc.uhf.LogUtils
 import cn.gygxzc.uhf.event.ErrorCode
 import cn.gygxzc.uhf.exception.RFIDException
+import cn.gygxzc.uhf.uhf.UHFException
+import cn.gygxzc.uhf.uhf.enums.UHFExEnums
+import cn.gygxzc.uhf.uhf.reader.SocketReader
 import cn.gygxzc.uhf.uhf.reader.UHFReader
+import cn.gygxzc.uhf.uhf.util.Tools
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
@@ -48,6 +53,7 @@ class BleInstance {
                 it.onComplete()
             } catch (e: IOException) {
                 it.onError(e)
+                socket.close()
             }
         }
                 .timeout(10, TimeUnit.SECONDS)
@@ -68,19 +74,19 @@ class BleInstance {
      * 流程是接收命令，返回结果，所以可以这样操作
      * 如果使用蓝牙通信，这种操作应该是不可取的，因为双方都可能是消息的发起者
      */
-    fun write(vararg bytes: ByteArray): Observable<ByteArray> {
-        return Observable.fromIterable(bytes.toList())
-                .map {
-                    ensureSocket()
-                    synchronized(bluetoothSocket!!) {
-                        bluetoothSocket!!.outputStream.write(it)
-                        bluetoothSocket!!.outputStream.flush()
-                    }
-                    it
-                }
-                .toList()
-                .retry(2, { it !is RFIDException })
-                .flatMapObservable<ByteArray> { UHFReader.read(bluetoothSocket!!.inputStream) }
+    fun write(bytes: ByteArray): Observable<ByteArray> {
+        return Observable.create<ByteArray> {
+            ensureSocket()
+            LogUtils.info(TAG,"写->${Tools.bytes2HexString(bytes)}")
+            synchronized(bluetoothSocket!!) {
+                bluetoothSocket!!.outputStream.write(bytes)
+                bluetoothSocket!!.outputStream.flush()
+            }
+            it.onNext(bytes)
+            it.onComplete()
+        }
+                .flatMap<ByteArray> { UHFReader.read(bluetoothSocket!!.inputStream) }
+                .doOnDispose { LogUtils.debug(TAG,"write -> 取消订阅") }
                 .subscribeOn(Schedulers.io())
                 .unsubscribeOn(Schedulers.io())
     }
@@ -91,6 +97,7 @@ class BleInstance {
     fun writeSingle(bytes: ByteArray): Single<ByteArray> {
         return Single.create<ByteArray> {
             ensureSocket()
+            LogUtils.debug(TAG,"写single->${Tools.bytes2HexString(bytes)}")
             synchronized(bluetoothSocket!!) {
                 bluetoothSocket!!.outputStream.write(bytes)
                 bluetoothSocket!!.outputStream.flush()
@@ -98,6 +105,27 @@ class BleInstance {
             it.onSuccess(bytes)
         }
                 .flatMap { UHFReader.readSingle(bluetoothSocket!!.inputStream) }
+    }
+
+
+    fun writeDirect(bytes: ByteArray):Single<ByteArray>{
+        return Single.create<ByteArray> {
+            ensureSocket()
+            synchronized(bluetoothSocket!!) {
+                bluetoothSocket!!.outputStream.write(bytes)
+                bluetoothSocket!!.outputStream.flush()
+            }
+            Thread.sleep(50)
+            val response = SocketReader.read(bluetoothSocket!!.inputStream)
+            if (response==null){
+                it.onError(UHFException(UHFExEnums.ERR_NO_RESPONSE))
+            }else{
+                it.onSuccess(response)
+            }
+        }
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+
     }
 
     /**

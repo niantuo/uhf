@@ -59,9 +59,17 @@ public class CMDFactory {
             (byte) 0x00, (byte) 0x08, (byte) 0x4D, END};
 
 
+    /**
+     * 设置调节器参数
+     */
     public byte[] sensitive = {HEAD, (byte) 0x00, (byte) 0xF0, (byte) 0x00,
-            (byte) 0x04, (byte) 0x02, (byte) 0x06, (byte) 0x00,
-            (byte) 0xA0, (byte) 0x9C, END};
+            (byte) 0x04, (byte) 0x02, (byte) 0x06, (byte) 0x01,
+            (byte) 0xB0, (byte) 0x9C, END};
+
+    /**
+     * 查询调节器参数
+     */
+    public byte[] querySensitive={HEAD,(byte)0x00,(byte)0xF1,(byte)0x00,(byte)0x00,(byte)0xF1, END};
 
     public byte[] outputPower = {HEAD, (byte) 0x00, (byte) 0xB6, (byte) 0x00
             , (byte) 0x02, (byte) 0x0A, (byte) 0x28
@@ -100,16 +108,25 @@ public class CMDFactory {
     }
 
 
+    /**
+     * 这个实际上我还是有一些问题的，读出来的用户数据很多，但是实际上到底是多少
+     * @param password  标签的密码
+     * @param menBack  要写入的区域
+     * @param startAddr  其实地址
+     * @param dataLen  数据长度
+     * @param originData  原始数据
+     * @return
+     */
     public byte[] createWriteCMD(byte[] password, int menBack, int startAddr, int dataLen,
                                  byte[] originData) {
 
-        int readLen = dataLen - startAddr;
-        byte[] data = new byte[readLen];
+
+        byte[] data = new byte[dataLen];
         Arrays.fill(data, (byte) 0x00);
-        if (originData.length >= readLen) {
-            System.arraycopy(originData, 0, data, 0, readLen);
+        if (originData.length >= dataLen) {
+            System.arraycopy(originData, 0, data, 0, dataLen);
         } else {
-            System.arraycopy(originData, 0, data, readLen - originData.length, originData.length);
+            System.arraycopy(originData, 0, data, dataLen - originData.length, originData.length);
         }
         int cmdLen = 16 + data.length;
         int parameterLen = 9 + data.length;

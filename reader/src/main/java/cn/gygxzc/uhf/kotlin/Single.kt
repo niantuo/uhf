@@ -1,5 +1,6 @@
 package cn.gygxzc.uhf.kotlin
 
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.SingleObserver
 import io.reactivex.SingleSource
@@ -21,5 +22,14 @@ fun <T, O> Single<T>.otherSingle(call: (T, SingleObserver<in O>) -> Unit): Singl
 
 fun <T> Single<T>.flatSingleEvent(): FlatSingleObserver<T> {
     return FlatSingleObserver(this)
+}
 
+fun <T, O> Single<T>.otherObservable(observable: (T) -> Observable<O>): Single<O> {
+    return flatMap<O> { t ->
+        val observer = ObserverToSingle<O>()
+        Single.create<O> {
+            observer.setSingleObserver(it)
+            observable.invoke(t).subscribe(observer)
+        }.doOnDispose { observer.dispose() }
+    }
 }
