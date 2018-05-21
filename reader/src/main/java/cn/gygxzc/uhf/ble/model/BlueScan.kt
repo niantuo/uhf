@@ -29,10 +29,18 @@ class BlueScan(private val mContext: Context) : IBleModel {
     }
 
 
-    private val mAdapter = BluetoothAdapter.getDefaultAdapter()!!
+    private val mAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     private val mPublish = PublishSubject.create<BluetoothDevice>()
     private val receiver = BlueScanReceiver()
 
+
+    /**
+     * 确保是否有 蓝牙可用
+     * 模拟器无蓝牙适配器，会报错
+     */
+    override fun ble(): Boolean {
+        return mAdapter != null
+    }
 
     /**
      * 获取已绑定的设备，这个功能很重要，如果我们的APP扫描不到蓝牙设备
@@ -40,7 +48,7 @@ class BlueScan(private val mContext: Context) : IBleModel {
      * 这样不用考虑蓝牙扫描的多样性，因为系统的实现方式应该是最好的
      */
     override fun getBondedDevices(): Set<BluetoothDevice> {
-        return mAdapter.bondedDevices.toMutableSet()
+        return mAdapter?.bondedDevices?.toMutableSet() ?: emptySet()
     }
 
 
@@ -74,11 +82,11 @@ class BlueScan(private val mContext: Context) : IBleModel {
      * 返回蓝牙是否可以使用
      */
     override fun isBleEnable(): Boolean {
-        return mAdapter.isEnabled
+        return mAdapter?.isEnabled ?: false
     }
 
     override fun getRemoteDevice(address: String): BluetoothDevice? {
-        return mAdapter.getRemoteDevice(address)
+        return mAdapter?.getRemoteDevice(address)
     }
 
 
@@ -90,28 +98,32 @@ class BlueScan(private val mContext: Context) : IBleModel {
      */
     @SuppressLint("MissingPermission")
     override fun startScan(): Observable<BluetoothDevice> {
-        if (receiver.registered) {
-            cancelScan()
+        return if (mAdapter != null) {
+            if (receiver.registered) {
+                cancelScan()
+            } else {
+                val filter = IntentFilter()
+                filter.addAction(BluetoothDevice.ACTION_FOUND)
+                filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+                mContext.registerReceiver(receiver, filter)
+                receiver.registered = true
+            }
+            mAdapter.startDiscovery()  //开始搜索
+            mPublish.ofType(BluetoothDevice::class.java)
+                    .timeout(2, TimeUnit.MINUTES)
+                    .doOnError { cancelScan() }
+                    .doOnComplete { cancelScan() }
+                    .doOnDispose { cancelScan() }
         } else {
-            val filter = IntentFilter()
-            filter.addAction(BluetoothDevice.ACTION_FOUND)
-            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-            mContext.registerReceiver(receiver, filter)
-            receiver.registered = true
+            Observable.empty()
         }
-        mAdapter.startDiscovery()  //开始搜索
-        return mPublish.ofType(BluetoothDevice::class.java)
-                .timeout(2, TimeUnit.MINUTES)
-                .doOnError { cancelScan() }
-                .doOnComplete { cancelScan() }
-                .doOnDispose { cancelScan() }
     }
 
     @SuppressLint("MissingPermission")
     override fun cancelScan() {
         if (receiver.registered) {
             mContext.unregisterReceiver(receiver)
-            mAdapter.cancelDiscovery()
+            mAdapter?.cancelDiscovery()
             receiver.registered = false
         }
     }

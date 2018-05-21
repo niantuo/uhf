@@ -3,8 +3,12 @@ package cn.gygxzc.uhf
 import android.util.Log
 
 object LogUtils {
-    const val debug = true
+    private var debug = false
 
+
+    fun setIsDebug() {
+        debug = true
+    }
 
     fun debug(tag: String, message: String) {
         if (!debug) return

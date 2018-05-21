@@ -13,6 +13,7 @@ import io.reactivex.Observable
  */
 interface IBleModel {
 
+    fun ble(): Boolean
     /**
      * 判断蓝牙是否可用
      */
@@ -33,7 +34,7 @@ interface IBleModel {
     /**
      * 跳转到蓝牙设置或者扫描界面
      */
-    fun jumpToBleSetting(reqCode:Int)
+    fun jumpToBleSetting(reqCode: Int)
 
     /**
      * 取消扫描，一般情况下，需要取消扫描
@@ -41,7 +42,7 @@ interface IBleModel {
      */
     fun cancelScan()
 
-    fun getRemoteDevice(address:String):BluetoothDevice?
+    fun getRemoteDevice(address: String): BluetoothDevice?
 
     companion object {
         fun create(context: Context): IBleModel = BlueScan(context)
