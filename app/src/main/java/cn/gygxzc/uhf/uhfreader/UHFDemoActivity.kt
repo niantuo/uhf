@@ -7,7 +7,6 @@ import android.support.v7.widget.LinearLayoutManager
 import android.text.TextUtils
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.TextView
 import cn.gygxzc.uhf.kotlin.flatEvent
 import cn.gygxzc.uhf.kotlin.flatSingleEvent
 import cn.gygxzc.uhf.uhf.entity.TagInfo
@@ -175,6 +174,9 @@ class UHFDemoActivity : AppCompatActivity(), AnkoLogger {
         var disposable: Disposable? = null
         mAdapter.setNewData(mutableListOf())
         mReader.inventoryMulti()
+                .doOnNext {
+                    info("checked->${it.epc}")
+                }
                 .filter { !mAdapter.data.contains(it) }
                 .observeOn(AndroidSchedulers.mainThread())
                 .flatEvent()
@@ -315,7 +317,7 @@ class UHFDemoActivity : AppCompatActivity(), AnkoLogger {
         }
         mLoading.setCancelable(false)
         mLoading.show()
-        mWriter.writeToUser(getPwd(), userData, mTagInfo.epc)
+        mWriter.writeToUser(getPwd(), 0, 12, userData, mTagInfo.epc)
                 .observeOn(AndroidSchedulers.mainThread())
                 .flatSingleEvent()
                 .doOnNext {
@@ -323,7 +325,7 @@ class UHFDemoActivity : AppCompatActivity(), AnkoLogger {
                     toast("写入成功")
                 }
                 .doOnError {
-                    error("写入失败->",it)
+                    error("写入失败->", it)
                     toast("写入失败")
                     mLoading.hide()
                 }

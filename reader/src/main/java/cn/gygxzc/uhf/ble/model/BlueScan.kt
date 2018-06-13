@@ -61,6 +61,7 @@ class BlueScan(private val mContext: Context) : IBleModel {
      */
     override fun bleEnable(reqCode: Int) {
         val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (mContext is Activity) {
             mContext.startActivityForResult(intent, reqCode)
         } else {
