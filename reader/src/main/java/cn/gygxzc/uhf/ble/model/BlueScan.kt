@@ -11,7 +11,13 @@ import android.content.IntentFilter
 import android.provider.Settings
 import android.util.Log
 import cn.gygxzc.uhf.ble.IBleModel
+import cn.gygxzc.uhf.event.ErrorCode
+import cn.gygxzc.uhf.exception.RFIDException
+import io.reactivex.Emitter
 import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
@@ -30,8 +36,8 @@ class BlueScan(private val mContext: Context) : IBleModel {
 
 
     private val mAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-    private val mPublish = PublishSubject.create<BluetoothDevice>()
-    private val receiver = BlueScanReceiver()
+    private var mDisposable: Disposable? = null
+    val receiver = BlueScanReceiver()
 
 
     /**
@@ -99,33 +105,41 @@ class BlueScan(private val mContext: Context) : IBleModel {
      * 2、自动取消上一次的广播订阅操作
      */
     @SuppressLint("MissingPermission")
+    @Synchronized
     override fun startScan(): Observable<BluetoothDevice> {
         return if (mAdapter != null) {
-            if (receiver.registered) {
-                cancelScan()
-            } else {
+            mDisposable?.dispose()
+
+            Log.i(TAG, "startScan->")
+
+            Observable.create<BluetoothDevice> {
+                receiver.mEmitter = it
                 val filter = IntentFilter()
                 filter.addAction(BluetoothDevice.ACTION_FOUND)
                 filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
                 mContext.registerReceiver(receiver, filter)
                 receiver.registered = true
+                mAdapter.startDiscovery()  //开始搜索
             }
-            mAdapter.startDiscovery()  //开始搜索
-            mPublish.ofType(BluetoothDevice::class.java)
-                    .timeout(2, TimeUnit.MINUTES)
+                    .timeout(30, TimeUnit.SECONDS)
+                    .doOnDispose { cancelScan() }
                     .doOnError { cancelScan() }
                     .doOnComplete { cancelScan() }
-                    .doOnDispose { cancelScan() }
+                    .subscribeOn(Schedulers.io())
+                    .unsubscribeOn(Schedulers.io())
         } else {
-            Observable.empty()
+            Observable.error(RFIDException(ErrorCode.ERROR_BLE_DISABLE))
         }
     }
 
     @SuppressLint("MissingPermission")
+    @Synchronized
     override fun cancelScan() {
+        mDisposable?.dispose()
+        receiver.mEmitter = null
         if (receiver.registered) {
-            mContext.unregisterReceiver(receiver)
             mAdapter?.cancelDiscovery()
+            mContext.unregisterReceiver(receiver)
             receiver.registered = false
         }
     }
@@ -135,18 +149,25 @@ class BlueScan(private val mContext: Context) : IBleModel {
      * 接收蓝牙信息的广播
      */
     inner class BlueScanReceiver : BroadcastReceiver() {
+        @Volatile
         var registered: Boolean = false
+        var mEmitter: ObservableEmitter<BluetoothDevice>? = null
+
         override fun onReceive(context: Context, intent: Intent) {
-            Log.d(TAG, "intent: $intent")
+            Log.i(TAG, "intent: $intent")
             val action = intent.action
             if (action == BluetoothDevice.ACTION_FOUND) {
                 // 获取搜索到的蓝牙设备
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
                 // 回调到前台界面
-                mPublish.onNext(device)
+                if (mEmitter != null && !mEmitter!!.isDisposed) {
+                    mEmitter!!.onNext(device)
+                }
             } else if (action == BluetoothAdapter.ACTION_DISCOVERY_FINISHED) {
                 // 搜索完成
-                mPublish.onComplete()
+                if (mEmitter != null && !mEmitter!!.isDisposed) {
+                    mEmitter!!.onComplete()
+                }
             }
         }
     }

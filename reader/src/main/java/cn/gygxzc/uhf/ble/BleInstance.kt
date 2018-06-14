@@ -2,9 +2,11 @@ package cn.gygxzc.uhf.ble
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
+import android.content.Context
 import cn.gygxzc.uhf.LogUtils
 import cn.gygxzc.uhf.event.ErrorCode
 import cn.gygxzc.uhf.exception.RFIDException
+import cn.gygxzc.uhf.receiver.BlueStateReceiver
 import cn.gygxzc.uhf.uhf.enums.UHFExEnums
 import cn.gygxzc.uhf.uhf.reader.SocketReader
 import cn.gygxzc.uhf.uhf.reader.UHFReader
@@ -15,6 +17,7 @@ import io.reactivex.schedulers.Schedulers
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.TimeUnit
+
 
 /**
  * @author niantuo
@@ -36,8 +39,11 @@ class BleInstance {
     var connectedDevice: BluetoothDevice? = null
     var bluetoothSocket: BluetoothSocket? = null
 
+
     fun isConnected(): Boolean {
-        return connectedDevice != null && bluetoothSocket != null
+        return connectedDevice != null
+                && bluetoothSocket != null
+                && BlueStateReceiver.isConnected(connectedDevice!!)
     }
 
     fun connect(device: BluetoothDevice): Observable<BluetoothSocket> {
@@ -156,6 +162,5 @@ class BleInstance {
         if (bluetoothSocket == null)
             throw RFIDException(ErrorCode.ERROR_BLE_NO_CONNECTED)
     }
-
 
 }

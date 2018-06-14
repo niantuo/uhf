@@ -11,6 +11,7 @@ import cn.gygxzc.uhf.kotlin.flatEvent
 import cn.tonyandmoney.anko.adapter.KAdapter
 import com.afollestad.materialdialogs.MaterialDialog
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import org.jetbrains.anko.*
 import org.jetbrains.anko.recyclerview.v7.recyclerView
@@ -109,6 +110,7 @@ class BleListActivity : AppCompatActivity(), AnkoLogger {
 
         mAdapter.setNewData(mBleModel.getBondedDevices().toMutableList())
 
+
         mBleModel.startScan()
                 .filter { !mAdapter.data.contains(it) }
                 .subscribeOn(Schedulers.io())
@@ -118,12 +120,14 @@ class BleListActivity : AppCompatActivity(), AnkoLogger {
                 .doOnNext { mAdapter.addData(it) }
                 .doOnComplete {
                     mLoading.hide()
+                    mSwipeRefreshLayout.isRefreshing = false
                     toast("扫描完成")
                 }
                 .doOnError {
                     mLoading.hide()
                     error("蓝牙扫描->$it")
-                    longToast("扫描错误")
+                    longToast(it.message?:"扫描错误，已停止")
+                    mSwipeRefreshLayout.isRefreshing = false
                 }
                 .subscribe()
 
@@ -140,6 +144,7 @@ class BleListActivity : AppCompatActivity(), AnkoLogger {
         super.onDestroy()
         mLoading.dismiss()
         mBleModel.cancelScan()
+
     }
 
 }
